@@ -32,10 +32,22 @@ func main() {
 	}
 
 	// Get provider configuration
-	provider, err := auth.GetProviderInfo(providerEndpoint)
-	if err != nil {
-		log.Fatalf("Failed to retrieve provider configuration for provider %v with error %v\n", providerEndpoint, err)
+	var provider *auth.OIDCProviderInfo
+	if c.OpenIdConfig == "" {
+		log.Println("Reading provider auth from external endpoint")
+		provider, err = auth.GetProviderInfo(providerEndpoint)
+		if err != nil {
+			log.Fatalf("Failed to retrieve provider configuration for provider %v with error %v\n", providerEndpoint, err)
+		}
+	} else {
+		log.Println("Reading provider auth from config")
+		provider, err = auth.GetProviderInfoFromConfig([]byte(c.OpenIdConfig))
+		if err != nil {
+			log.Fatalf("Failed to retrieve provider configuration for config file %v with error %v\n", c, err)
+		}
 	}
+
+	log.Printf("Determined token URL %v\n", provider.TokenURL)
 
 	// Retrieve an OIDC token using the password grant type
 	accessToken, err := auth.RequestJWT(username, password, otp, provider.TokenURL, c.ClientID, c.ClientSecret, c.ClientScope)

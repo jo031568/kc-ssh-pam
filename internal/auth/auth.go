@@ -50,6 +50,17 @@ func unmarshalResp(r *http.Response, body []byte, v interface{}) error {
 	return fmt.Errorf("expected Content-Type = application/json, got %q: %v", ct, err)
 }
 
+func GetProviderInfoFromConfig(config []byte) (*OIDCProviderInfo, error) {
+	p := new(OIDCProviderInfo)
+	err := json.Unmarshal(config, &p)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse openid config: %v", err)
+	}
+	ctx := context.Background()
+	p.KeySet = oidc.NewRemoteKeySet(ctx, p.JWKSURL)
+	return p, nil
+}
+
 func GetProviderInfo(providerEndpoint string) (*OIDCProviderInfo, error) {
 	wellKnown := strings.TrimSuffix(providerEndpoint, "/") + "/.well-known/openid-configuration"
 	// Query the oidc provider for the configuration
